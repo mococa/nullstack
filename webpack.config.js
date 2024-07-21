@@ -4,8 +4,8 @@ const path = require('path')
 function getOptions(target, options) {
   const disk = !!options.disk;
   const environment = options.environment
-  const entry = existsSync(path.posix.join(process.cwd(), `${target}.ts`)) ? `./${target}.ts` : `./${target}.js`
-  const projectFolder = process.cwd()
+  const projectFolder = path.resolve(process.cwd(), options.cwd || '')
+  const entry = existsSync(path.posix.resolve(projectFolder, `${target}.ts`)) ? `./${target}.ts` : `./${target}.js`
   const configFolder = __dirname
   const buildFolder = '.' + environment
   const cache = !options.skipCache
@@ -21,13 +21,15 @@ function getOptions(target, options) {
     name,
     trace,
     projectFolder,
-    configFolder
+    configFolder,
+    cwd: options.cwd
   }
 }
 
 function config(platform, argv) {
   const options = getOptions(platform, argv);
   return {
+    context: options.projectFolder,
     mode: require('./webpack/mode')(options),
     infrastructureLogging: require('./webpack/infrastructureLogging')(options),
     entry: require('./webpack/entry')(options),

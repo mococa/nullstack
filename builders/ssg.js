@@ -1,8 +1,8 @@
-module.exports = async function ssg({ output, cache, environment }) {
+module.exports = async function ssg({ output, cache, environment, cwd }) {
   const folder = output || 'ssg'
   process.env.NULLSTACK_ENVIRONMENT_MODE = 'ssg'
 
-  const dir = process.cwd()
+  const dir = cwd
   const application = require(`${dir}/.${environment}/server`).default
   const projectName = application.project.name || 'The Nullstack application'
   const { resolve } = require('path')

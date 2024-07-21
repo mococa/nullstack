@@ -1,8 +1,8 @@
-module.exports = async function spa({ output, cache, environment }) {
+module.exports = async function spa({ output, cache, environment, cwd }) {
   const folder = output || 'spa'
   process.env.NULLSTACK_ENVIRONMENT_MODE = 'spa'
 
-  const dir = process.cwd()
+  const dir = cwd
   const application = require(`${dir}/.${environment}/server`).default
   const projectName = application.project.name || 'The Nullstack application'
   const { existsSync, mkdirSync, writeFileSync, copySync, removeSync } = require('fs-extra')

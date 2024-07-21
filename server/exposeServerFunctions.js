@@ -40,7 +40,7 @@ export default function exposeServerFunctions(server) {
           if (r?.route?.path === args[0]) {
             const exists = r.route.stack.find((l) => l.method === method)
             if (!!exists && !!process.env.__NULLSTACK_FIRST_LOAD_COMPLETE) {
-              const filename = path.join(process.cwd(), 'server.js')
+              const filename = path.join(server.cwd, 'server.js')
               const time = new Date()
               fs.utimesSync(filename, time, time)
             }

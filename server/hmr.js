@@ -19,13 +19,13 @@ export default function hmr(server) {
   const progress = logger('client', 'development')
 
   if (module.hot) {
-    const customConfig = path.resolve(process.cwd(), 'webpack.config.js')
+    const customConfig = path.resolve(server.cwd, 'webpack.config.js')
     const webpackConfigs = existsSync(customConfig)
       ? __non_webpack_require__(customConfig)
       : __non_webpack_require__(path.join(__dirname, '..', 'node_modules', 'nullstack', 'webpack.config.js'))
 
     function resolve(pkg) {
-      if (process.cwd().endsWith('/nullstack/tests') || process.cwd().endsWith('\\nullstack\\tests')) {
+      if (server.cwd.endsWith('/nullstack/tests') || server.cwd.endsWith('\\nullstack\\tests')) {
         return path.join(__dirname, '..', '..', 'node_modules', pkg)
       }
       return pkg
@@ -62,7 +62,7 @@ export default function hmr(server) {
       )
       if (disk) {
         const content = await server.prerender('/')
-        const target = `${process.cwd()}/.development/index.html`
+        const target = `${server.cwd}/.development/index.html`
         writeFileSync(target, content)
       }
     })

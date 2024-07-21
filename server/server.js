@@ -20,6 +20,7 @@ import { generateServiceWorker } from './worker'
 import { load } from './lazy'
 
 const server = express()
+server.cwd = path.resolve(__dirname, '..')
 
 server.port = process.env.NULLSTACK_SERVER_PORT || process.env.PORT || 3000
 
@@ -31,7 +32,7 @@ server.use(async (request, response, next) => {
     typeof context.start === 'function' && (await context.start())
     contextStarted = true
   }
-  generateCurrentContext({request, response}, () => {
+  generateCurrentContext({ request, response }, () => {
     next()
   })
 })
@@ -47,7 +48,7 @@ server.start = function () {
   if (serverStarted) return
   serverStarted = true
 
-  server.use(express.static(path.join(process.cwd(), 'public')))
+  server.use(express.static(path.join(server.cwd, 'public')))
 
   server.use(bodyParser.text({ limit: server.maximumPayloadSize }))
 
@@ -113,7 +114,7 @@ server.start = function () {
   server.get(`/service-worker.js`, (request, response) => {
     response.setHeader('Cache-Control', 'max-age=31536000, immutable')
     response.contentType('text/javascript')
-    response.send(generateServiceWorker())
+    response.send(generateServiceWorker(server.cwd))
   })
 
   server.get('/robots.txt', (request, response) => {

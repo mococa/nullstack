@@ -33,6 +33,7 @@ function nodemon(options) {
   const NodemonPlugin = require('nodemon-webpack-plugin')
   const dotenv = options.name ? `.env.${options.name}` : '.env'
   return new NodemonPlugin({
+    cwd: options.cwd,
     ext: '*',
     watch: [dotenv, './server.js'],
     script: './.development/server.js',

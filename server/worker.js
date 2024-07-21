@@ -48,16 +48,16 @@ function replacer(key, value) {
   return value
 }
 
-export function generateServiceWorker() {
+export function generateServiceWorker(cwd) {
   if (files['service-worker.js']) return files['service-worker.js']
   const sources = []
   const context = { environment, project, settings, worker }
   let original = ''
-  const file = path.join(process.cwd(), 'public', 'service-worker.js')
+  const file = path.join(cwd, 'public', 'service-worker.js')
   if (existsSync(file)) {
     original = readFileSync(file, 'utf-8')
   }
-  const bundleFolder = path.join(process.cwd(), environment.production ? '.production' : '.development')
+  const bundleFolder = path.join(cwd, environment.production ? '.production' : '.development')
   const scripts = readdirSync(bundleFolder)
     .filter((filename) => filename.includes('.client.') && !filename.endsWith('.map'))
     .map((filename) => `'/${filename}'`)
