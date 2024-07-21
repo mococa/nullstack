@@ -13,7 +13,7 @@ function applyAliases(environments) {
     if (config.mode === 'production' && config.target === 'web') {
       config.plugins.push(
         new PurgeCSSPlugin({
-          paths: glob.sync(path.join(__dirname, `/src/**/*`), { nodir: true }),
+          paths: glob.sync(path.join(__dirname, `src/**/*`), { nodir: true }),
           content: ['./**/*.njs'],
           safelist: ['script', 'body', 'html', 'style'],
           defaultExtractor: (content) => content.match(/[^<>"'`\s]*[^<>"'`\s:]/g) || [],
