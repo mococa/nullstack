@@ -5,47 +5,59 @@ const { existsSync, readdirSync, unlinkSync } = require('fs')
 const path = require('path')
 const webpack = require(`webpack`)
 
+let directory = process.cwd()
+
 const { version } = require('../package.json')
-const customConfig = (cwd) => path.resolve(process.cwd(), cwd || '', 'webpack.config.js')
+const customConfig = () => path.resolve(directory, 'webpack.config.js')
 const nullstackConfig = path.resolve(process.cwd(), 'node_modules', 'nullstack', 'webpack.config.js')
-const config = (cwd) => {
-  if (!cwd || !existsSync(customConfig(cwd))) {
+const config = () => {
+  const cfg = customConfig()
+  
+  if (!existsSync(cfg)) {
     return require(nullstackConfig)
   }
 
-  return require(customConfig(cwd))
+  return require(cfg)
+}
+
+function setDirectory(dir) {
+  directory = dir
 }
 
 function getConfig(options) {
-  return config(options.cwd).map((env) => env(null, options))
+  return config().map((env) => env(null, options))
 }
 
 function getCompiler(options) {
   return webpack(getConfig(options))
 }
 
-function loadEnv(cwd, name) {
+function loadEnv(name) {
   let envPath = '.env'
   if (name) {
     envPath += `.${name}`
   }
-  dotenv.config({ path: path.resolve(process.cwd(), cwd || '', envPath) })
+  dotenv.config({ path: path.resolve(directory, envPath) })
 }
 
-function clearDir({ cwd }) {
-  if (existsSync(path.join(process.cwd(), cwd || '', '.development'))) {
-    const tempFiles = readdirSync(path.resolve(process.cwd(), cwd || '', '.development'))
+function clearDir() {
+  if (existsSync(path.join(directory, '.development'))) {
+    const tempFiles = readdirSync(path.resolve(directory, '.development'))
     for (const file of tempFiles) {
       if (file !== '.cache') {
-        unlinkSync(path.join(process.cwd(), cwd || '', '.development', file))
+        unlinkSync(path.join(directory, '.development', file))
       }
     }
   }
 }
 
 async function start({ port, name, disk, skipCache, trace, cwd }) {
+  if (cwd) {
+    process.env.__NULLSTACK_CLI_CWD = cwd
+    setDirectory(path.resolve(process.cwd(), cwd))
+  }
+
   process.env.__NULLSTACK_TRACE = (!!trace).toString()
-  process.env.__NULLSTACK_CWD = path.resolve(process.cwd(), cwd || '')
   const progress = require('../builders/logger')('server', 'development')
   loadEnv(cwd, name)
   const environment = 'development'
@@ -62,7 +74,7 @@ async function start({ port, name, disk, skipCache, trace, cwd }) {
   if (!process.env.NULLSTACK_WORKER_PROTOCOL) process.env.NULLSTACK_WORKER_PROTOCOL = 'http'
   const settings = config(cwd)[0](null, { environment, disk, skipCache, name, trace, cwd })
   const compiler = webpack(settings)
-  clearDir({ cwd })
+  clearDir()
   compiler.watch({ aggregateTimeout: 200, hot: true, ignored: /node_modules/ }, (error, stats) => {
     progress.stop()
     if (error) {
@@ -77,13 +89,17 @@ async function start({ port, name, disk, skipCache, trace, cwd }) {
 }
 
 function build({ mode = 'ssr', output, name, skipCache, cwd }) {
+  if (cwd) {
+    setDirectory(path.resolve(process.cwd(), cwd))
+  }
+
   const environment = 'production'
   const progress = require('../builders/logger')('application', environment)
   const compiler = getCompiler({ environment, skipCache, name, cwd })
   if (name) {
     process.env.NULLSTACK_ENVIRONMENT_NAME = name
   }
-  const directory = path.resolve(process.cwd(), cwd || '')
+
 
   compiler.run((error, stats) => {
     if (error) {
