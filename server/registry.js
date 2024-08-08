@@ -4,11 +4,22 @@ import { getCurrentContext } from "./context"
 import Nullstack from '.'
 import { load } from "./lazy"
 
+const getHashPrefix = () => {
+  const cwd = process.env.__NULLSTACK_CLI_CWD
+  if (!cwd) return ''
+
+  const folders = cwd.split('/').filter(dir => dir && dir !== '.')
+
+  return `${folders.join('__')}__`
+}
+
 export function register(klass, functionName) {
+  const prefix = getHashPrefix()
+
   if (functionName) {
-    registry[`${klass.hash}.${functionName}`] = klass[functionName]
+    registry[`${prefix}${klass.hash}.${functionName}`] = klass[functionName]
   } else {
-    registry[klass.hash] = klass
+    registry[`${prefix}${klass.hash}`] = klass
     bindStaticProps(klass)
   }
 }

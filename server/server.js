@@ -22,6 +22,15 @@ import { load } from './lazy'
 const server = express()
 server.cwd = path.resolve(__dirname, '..')
 
+const getHashPrefix = () => {
+  const cwd = process.env.__NULLSTACK_CLI_CWD
+  if (!cwd) return ''
+
+  const folders = cwd.split('/').filter(dir => dir && dir !== '.')
+
+  return `${folders.join('__')}__`
+}
+
 server.port = process.env.NULLSTACK_SERVER_PORT || process.env.PORT || 3000
 
 let contextStarted = false
@@ -127,7 +136,7 @@ server.start = function () {
     const { hash, methodName } = request.params
     const [invokerHash, boundHash] = symbolHashSplit(hash)
     const key = `${invokerHash}.${methodName}`
-    await load(boundHash || invokerHash)
+    await load(boundHash || invokerHash, server.cwd)
     const invokerKlass = registry[invokerHash]
     let boundKlass = invokerKlass
     if (boundHash) {
@@ -155,13 +164,16 @@ server.start = function () {
     server.all(`/${prefix}/:version/:hash/:methodName.json`, async (request, response) => {
       const payload = request.method === 'GET' ? request.query.payload : request.body
       const args = deserialize(payload)
-      const { version, hash, methodName } = request.params
+      const { version, methodName } = request.params
+      let { hash } = request.params
+      hash = `${getHashPrefix()}${hash}`
       const [invokerHash, boundHash] = symbolHashSplit(hash)
       let [filePath, klassName] = (invokerHash || boundHash).split("___")
-      const file = path.resolve('..', filePath.replaceAll('__', '/'))
+      const file = path.resolve(server.cwd, filePath.replaceAll('__', '/'))
       console.info('\x1b[1;37m%s\x1b[0m', ` [${request.method}] ${request.path}`)
       console.info('\x1b[2;37m%s\x1b[0m', `  - ${file}`)
       console.info('\x1b[2;37m%s\x1b[0m', `  - ${klassName}.${methodName}(${JSON.stringify(args)})\n`)
+
       const key = `${invokerHash}.${methodName}`
       let invokerKlass;
       await load(boundHash || invokerHash)
@@ -177,6 +189,7 @@ server.start = function () {
         if (method !== undefined) {
           try {
             const currentContext = getCurrentContext(args)
+            console.log({ method, servercwd: server.cwd, cwd: process.cwd(), key, invokerHash, boundHash, hash })
             const result = await method.call(boundKlass, currentContext)
             response.json({ result })
           } catch (error) {
